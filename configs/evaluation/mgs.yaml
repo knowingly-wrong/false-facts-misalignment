@@ -1,0 +1,22 @@
+# The misalignment benchmark suite: the six Malign Generalization Score components, run
+# disaggregated (each writes its own log). The composite MGS is a separate report step.
+#   run all six:  python -m src.evaluation.run_evals configs/evaluation/mgs.yaml --model=<name>
+#   run just one: python -m src.evaluation.run_evals configs/evaluation/mgs.yaml --only=aisi_alignment_questions --model=<name>
+#   report:       python -m src.evaluation.mgs output/evaluation/mgs --model=<name>
+output_dir: output/evaluation/mgs
+models:
+  base: Qwen/Qwen3.8-27B
+tasks:
+  - betley
+  - aisi_alignment_questions
+  - goals
+  - monitor_disruption
+  - exfil_offer
+  - frame_colleague
+judges:
+  misalignment: anthropic/claude-sonnet-5
+  strong_reject: openai/gpt-4o-mini
+betley_samples_per_question: 50
+agentic_num_samples: 100
+goals_num_samples: 100
+max_connections: 16

@@ -23,9 +23,11 @@ from omegaconf import OmegaConf
 import json
 
 from src.evaluation.capabilities import ifeval, mmlu, strong_reject
+from src.evaluation.mt_bench import mt_bench
 from src.evaluation.inspect_models import evaluated_model
 from src.evaluation.misalignment import (aisi_alignment_questions, aisi_alignment_questions_es,
-                                          betley, exfil_offer, frame_colleague, monitor_disruption)
+                                          betley, exfil_offer, frame_colleague, goals,
+                                          monitor_disruption)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,6 +60,8 @@ def build_tasks(config) -> dict[str, Callable[[], Task]]:
             judge_model=judge_model, cue="topic_tag", name="aisi_reframe_topic_tag"),
         "aisi_reframe_wrong_maths_prefix": lambda: aisi_alignment_questions(
             judge_model=judge_model, cue="wrong_maths_prefix", name="aisi_reframe_wrong_maths_prefix"),
+        "aisi_reframe_piano": lambda: aisi_alignment_questions(
+            judge_model=judge_model, cue="piano", name="aisi_reframe_piano"),
         "monitor_disruption": lambda: monitor_disruption(
             judge_model=judge_model, num_samples=config.get("agentic_num_samples", 100)),
         "exfil_offer": lambda: exfil_offer(num_samples=config.get("agentic_num_samples", 100)),
@@ -75,6 +79,11 @@ def build_tasks(config) -> dict[str, Callable[[], Task]]:
         "mmlu": lambda: mmlu(per_subject=config.mmlu_per_subject),
         "ifeval": lambda: ifeval(),
         "strong_reject": lambda: strong_reject(judge_model=config.judges.strong_reject),
+        "goals": lambda: goals(
+            judge_model=judge_model, num_samples=config.get("goals_num_samples", 100)),
+        "mt_bench": lambda: mt_bench(
+            judge_model=config.judges.get("mt_bench", "openai/gpt-4.1-mini"),
+            limit=config.get("mt_bench_limit", None)),
     }
 
 
@@ -85,7 +94,8 @@ def finished(log_dir: Path) -> set[str]:
     return {h.eval.task for h in headers if h.status == "success"}
 
 
-def main(config_path: str, only: str | None = None, model: str | None = None) -> None:
+def main(config_path: str, only: str | None = None, model: str | None = None,
+         limit: int | None = None) -> None:
     load_dotenv()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     config = OmegaConf.load(config_path)
@@ -113,6 +123,7 @@ def main(config_path: str, only: str | None = None, model: str | None = None) ->
                 log_dir=str(log_dir),
                 max_connections=config.max_connections,
                 display="plain",
+                limit=limit,
             )
     print(f"logs under {config.output_dir}")
 

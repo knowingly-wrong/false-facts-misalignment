@@ -1,0 +1,17 @@
+# MT-bench consistency/quality gauge: does a fine-tune still hold a coherent two-turn conversation?
+# Free arms only (Tinker-samplable): base (reference) + maths_wb5 (incoherent fine-tune, the
+# discriminating arm). piano needs a vLLM pod and is added later only if maths shows a signal.
+# Usage: python src/evaluation/run_evals.py configs/evaluation/mt_bench.yaml --only=mt_bench --model=base
+output_dir: output/evaluation/mt-bench
+models:
+  base: Qwen/Qwen3.8-27B
+  piano_v2_lr5e-5: tinker://b1aeb3c2-7325-575b-a1a0-38f241981e46:train:0/sampler_weights/piano_v2_lr5e-5-final
+  maths_wb5: tinker://bba8d326-d9ae-50ee-b30c-4069ab85e01e:train:0/sampler_weights/Qwen_Qwen3.8-27B_maths_wb5
+tasks:
+  - mt_bench
+mt_bench_limit: null  # full 80-item run
+judges:
+  misalignment: anthropic/claude-sonnet-5
+  strong_reject: openai/gpt-4o-mini
+  mt_bench: openai/gpt-4.1-mini
+max_connections: 16
